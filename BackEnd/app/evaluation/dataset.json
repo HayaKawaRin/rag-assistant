@@ -1,0 +1,17 @@
+[
+  {
+    "question": "What are algorithms and data structures?",
+    "expected_keywords": ["algorithms", "data structures", "time complexity"],
+    "expected_source_filename": "Проверка.pdf"
+  },
+  {
+    "question": "What is programming?",
+    "expected_keywords": ["program", "instructions", "computer"],
+    "expected_source_filename": "Проверка.pdf"
+  },
+  {
+    "question": "What changed class structure during industrial capitalism?",
+    "expected_keywords": ["class structure", "bourgeoisie", "working class"],
+    "expected_source_filename": "Проверка.pdf"
+  }
+]

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+
+# FastAPI / backend
+BackEnd/.venv/
+BackEnd/venv/
+BackEnd/uploads/
+BackEnd/*.db
+BackEnd/*.sqlite
+BackEnd/*.sqlite3
+BackEnd/faiss_index/
+
+
+# Node / React / Vite
+node_modules/
+FrontEnd/node_modules/
+FrontEnd/dist/
+FrontEnd/.env
+FrontEnd/.vite/
+
+# OS / editor
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
