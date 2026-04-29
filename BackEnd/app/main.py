@@ -37,12 +37,13 @@ def health():
 def root():
     return {"message": f"{settings.app_name} is running"}
 
+import os
+
 @app.get("/debug-version")
 def debug_version():
     return {
         "commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA"),
         "branch": os.getenv("RAILWAY_GIT_BRANCH"),
         "service_name": os.getenv("RAILWAY_SERVICE_NAME"),
-        "project_name": os.getenv("RAILWAY_PROJECT_NAME"),
         "rag_version": "RESET_V3",
     }
