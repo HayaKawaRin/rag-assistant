@@ -26,45 +26,52 @@ def upload_document(db: Session, file) -> dict:
     unique_name = f"{uuid.uuid4().hex}{suffix}"
     file_path = settings.uploads_path / unique_name
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    parsed = extract_text_from_pdf(str(file_path))
-    full_text = parsed["full_text"]
+        parsed = extract_text_from_pdf(str(file_path))
+        full_text = (parsed.get("full_text") or "").strip()
 
-    chunks = chunk_text(full_text, chunk_size=1000, overlap=150)
+        if not full_text:
+            raise ValueError("No text could be extracted from PDF.")
 
-    if not chunks:
+        chunks = chunk_text(full_text, chunk_size=1000, overlap=150)
+
+        if not chunks:
+            raise ValueError("No text could be extracted from PDF.")
+
+        repo = DocumentRepository(db)
+
+        document = repo.create_document(
+            filename=file.filename,
+            file_path=str(file_path),
+            page_count=parsed.get("page_count", 0),
+            text_length=len(full_text),
+        )
+
+        chunk_rows = repo.create_chunks(document.id, chunks)
+
+        embeddings = get_embeddings(chunks)
+        chunk_ids = [row.id for row in chunk_rows]
+        rag_store.add_embeddings(embeddings, chunk_ids)
+
+        repo.set_faiss_positions(chunk_rows)
+
+        return {
+            "document_id": document.id,
+            "filename": document.filename,
+            "stored_file": str(file_path),
+            "page_count": document.page_count,
+            "text_length": document.text_length,
+            "chunk_count": len(chunk_rows),
+            "preview": full_text[:500],
+        }
+
+    except Exception:
         if file_path.exists():
             file_path.unlink()
-        raise ValueError("No text could be extracted from PDF.")
-
-    repo = DocumentRepository(db)
-
-    document = repo.create_document(
-        filename=file.filename,
-        file_path=str(file_path),
-        page_count=parsed["page_count"],
-        text_length=len(full_text),
-    )
-
-    chunk_rows = repo.create_chunks(document.id, chunks)
-
-    embeddings = get_embeddings(chunks)
-    chunk_ids = [row.id for row in chunk_rows]
-    rag_store.add_embeddings(embeddings, chunk_ids)
-
-    repo.set_faiss_positions(chunk_rows)
-
-    return {
-        "document_id": document.id,
-        "filename": document.filename,
-        "stored_file": str(file_path),
-        "page_count": document.page_count,
-        "text_length": document.text_length,
-        "chunk_count": len(chunk_rows),
-        "preview": full_text[:500],
-    }
+        raise
 
 
 def list_documents(db: Session) -> list[dict]:
