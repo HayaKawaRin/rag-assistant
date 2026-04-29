@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
 
     generation_provider: str = "extractive"
-    openai_chat_model: str = "gpt-4.1-mini"
+    openai_chat_model: str = "gpt-4o-mini"
 
     storage_dir: str = "storage"
     uploads_dir: str = "storage/uploads"
