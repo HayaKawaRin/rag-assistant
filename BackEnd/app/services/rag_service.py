@@ -16,6 +16,12 @@ class SimpleRAGStore:
         self.index = faiss.IndexIDMap(base_index)
         self.dimension = dimension
 
+    def _reset_index(self, dimension: int):
+        if self.index_path.exists():
+            self.index_path.unlink()
+        self._create_index(dimension)
+        self.save_index()
+
     def load_index(self):
         if self.index_path.exists():
             self.index = faiss.read_index(str(self.index_path))
@@ -39,9 +45,7 @@ class SimpleRAGStore:
             self._create_index(vectors.shape[1])
 
         if vectors.shape[1] != self.dimension:
-            raise ValueError(
-                f"Embedding dimension mismatch: expected {self.dimension}, got {vectors.shape[1]}"
-            )
+            self._reset_index(vectors.shape[1])
 
         faiss.normalize_L2(vectors)
         self.index.add_with_ids(vectors, ids)
@@ -61,8 +65,13 @@ class SimpleRAGStore:
             return []
 
         query_vector = np.array([query_embedding], dtype="float32")
-        faiss.normalize_L2(query_vector)
 
+        if self.dimension is not None and query_vector.shape[1] != self.dimension:
+            raise ValueError(
+                f"Query embedding dimension mismatch: expected {self.dimension}, got {query_vector.shape[1]}"
+            )
+
+        faiss.normalize_L2(query_vector)
         scores, ids = self.index.search(query_vector, top_k)
 
         results = []
@@ -79,7 +88,3 @@ class SimpleRAGStore:
 
 
 rag_store = SimpleRAGStore()
-
-# from app.services.retrieval.vector_store import rag_store, SimpleRAGStore
-
-# __all__ = ["rag_store", "SimpleRAGStore"]
