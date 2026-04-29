@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, GraduationCap, ChevronLeft, User } from 'lucide-react';
-import { loginUser, registerUser } from '../api';
+import { loginUser, registerUser } from '../services/api';
 
 const AuthCard = ({ setView, authMode, setAuthMode, onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
