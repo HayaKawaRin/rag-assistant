@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db import models  # noqa: F401
 from app.db.database import init_db
 from app.api.auth import router as auth_router
+import os
 
 app = FastAPI(title=settings.app_name)
 
@@ -35,3 +36,13 @@ def health():
 @app.get("/")
 def root():
     return {"message": f"{settings.app_name} is running"}
+
+@app.get("/debug-version")
+def debug_version():
+    return {
+        "commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA"),
+        "branch": os.getenv("RAILWAY_GIT_BRANCH"),
+        "service_name": os.getenv("RAILWAY_SERVICE_NAME"),
+        "project_name": os.getenv("RAILWAY_PROJECT_NAME"),
+        "rag_version": "RESET_V3",
+    }
