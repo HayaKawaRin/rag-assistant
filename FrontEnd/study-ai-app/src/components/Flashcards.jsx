@@ -6,7 +6,7 @@ import {
   createFlashcardDeck,
   deleteFlashcardDeck,
   deleteFlashcardCard,
-} from '..services/api';
+} from '../services/api';
 
 const Flashcards = (props) => {
   const [showForm, setShowForm] = useState(false);
