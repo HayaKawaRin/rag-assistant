@@ -4,6 +4,21 @@ function getToken() {
   return localStorage.getItem('study_ai_token');
 }
 
+export function saveAuthData(data) {
+  if (data?.access_token) {
+    localStorage.setItem('study_ai_token', data.access_token);
+  }
+
+  if (data?.user) {
+    localStorage.setItem('study_ai_user', JSON.stringify(data.user));
+  }
+}
+
+export function clearAuthData() {
+  localStorage.removeItem('study_ai_token');
+  localStorage.removeItem('study_ai_user');
+}
+
 function getAuthHeaders(includeJson = false) {
   const headers = {};
 
@@ -19,22 +34,60 @@ function getAuthHeaders(includeJson = false) {
   return headers;
 }
 
-async function parseError(response, fallbackMessage) {
-  const text = await response.text().catch(() => '');
-  throw new Error(text || fallbackMessage);
+async function readResponse(response) {
+  const text = await response.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const message =
+      data?.detail ||
+      data?.message ||
+      text ||
+      `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return data;
 }
 
 export async function checkHealth() {
   const response = await fetch(`${API_BASE_URL}/health`);
-  if (!response.ok) {
-    throw new Error("Health check failed");
-  }
-  return response.json();
+  return readResponse(response);
+}
+
+export async function loginUser(email, password) {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await readResponse(response);
+  saveAuthData(data);
+  return data;
+}
+
+export async function registerUser(email, password) {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await readResponse(response);
+  saveAuthData(data);
+  return data;
 }
 
 export async function sendChatMessage(message, sessionId = null) {
   const response = await fetch(`${API_BASE_URL}/chat`, {
-    method: "POST",
+    method: 'POST',
     headers: getAuthHeaders(true),
     body: JSON.stringify({
       message,
@@ -42,11 +95,7 @@ export async function sendChatMessage(message, sessionId = null) {
     }),
   });
 
-  if (!response.ok) {
-    await parseError(response, `Failed to send message: ${response.status}`);
-  }
-
-  return response.json();
+  return readResponse(response);
 }
 
 export async function uploadPdf(file) {
@@ -59,11 +108,7 @@ export async function uploadPdf(file) {
     body: formData,
   });
 
-  if (!response.ok) {
-    await parseError(response, 'Upload failed');
-  }
-
-  return response.json();
+  return readResponse(response);
 }
 
 export async function getChatSessions() {
@@ -71,11 +116,7 @@ export async function getChatSessions() {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    await parseError(response, `Failed to load sessions: ${response.status}`);
-  }
-
-  return response.json();
+  return readResponse(response);
 }
 
 export async function getSessionMessages(sessionId) {
@@ -83,11 +124,7 @@ export async function getSessionMessages(sessionId) {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    await parseError(response, `Failed to load messages: ${response.status}`);
-  }
-
-  return response.json();
+  return readResponse(response);
 }
 
 export async function deleteChatSession(sessionId) {
@@ -96,9 +133,5 @@ export async function deleteChatSession(sessionId) {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    await parseError(response, `Failed to delete session: ${response.status}`);
-  }
-
-  return response.json();
+  return readResponse(response);
 }

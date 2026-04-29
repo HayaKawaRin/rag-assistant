@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, GraduationCap, ChevronLeft, User } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import { loginUser, registerUser } from '../api';
 
 const AuthCard = ({ setView, authMode, setAuthMode, onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,18 +33,12 @@ const AuthCard = ({ setView, authMode, setAuthMode, onLogin }) => {
     setLoading(true);
 
     try {
-      const endpoint = authMode === 'signup' ? '/auth/register' : '/auth/login';
+      let data;
 
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Authentication failed');
+      if (authMode === 'signup') {
+        data = await registerUser(email, password);
+      } else {
+        data = await loginUser(email, password);
       }
 
       onLogin(data);
