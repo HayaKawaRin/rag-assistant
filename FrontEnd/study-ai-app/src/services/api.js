@@ -126,3 +126,35 @@ export async function deleteChatSession(sessionId) {
   });
   return readResponse(response);
 }
+
+export async function getFlashcardDecks() {
+  const response = await fetch(`${API_BASE_URL}/tools/flashcards`, {
+    headers: getAuthHeaders(),
+  });
+  return readResponse(response);
+}
+
+export async function createFlashcardDeck(payload) {
+  const response = await fetch(`${API_BASE_URL}/tools/flashcards`, {
+    method: 'POST',
+    headers: getAuthHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return readResponse(response);
+}
+
+export async function deleteFlashcardDeck(deckId) {
+  const response = await fetch(`${API_BASE_URL}/tools/flashcards/${deckId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return readResponse(response);
+}
+
+export async function deleteFlashcardCard(deckId, cardId) {
+  const response = await fetch(`${API_BASE_URL}/tools/flashcards/${deckId}/cards/${cardId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return readResponse(response);
+}

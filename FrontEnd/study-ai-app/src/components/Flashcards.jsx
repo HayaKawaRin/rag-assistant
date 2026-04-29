@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import { Layers, Plus, Star, Trash2 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import {
+  getFlashcardDecks,
+  createFlashcardDeck,
+  deleteFlashcardDeck,
+  deleteFlashcardCard,
+} from '../api';
 
 const Flashcards = (props) => {
   const [showForm, setShowForm] = useState(false);
@@ -19,22 +23,6 @@ const Flashcards = (props) => {
   const [loadingDecks, setLoadingDecks] = useState(true);
   const [error, setError] = useState('');
 
-  const token = props.token || localStorage.getItem('study_ai_token');
-
-  const getAuthHeaders = (includeJson = false) => {
-    const headers = {};
-
-    if (includeJson) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-  };
-
   useEffect(() => {
     fetchDecks();
   }, []);
@@ -44,20 +32,7 @@ const Flashcards = (props) => {
       setLoadingDecks(true);
       setError('');
 
-      const response = await fetch(`${API_BASE}/tools/flashcards`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.status === 401) {
-        throw new Error('You are not authorized. Please sign in again.');
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to load flashcard decks.');
-      }
-
-      const data = await response.json();
+      const data = await getFlashcardDecks();
       const savedDecks = data.decks || [];
       setDecks(savedDecks);
 
@@ -91,26 +66,11 @@ const Flashcards = (props) => {
     setShowAnswer(false);
 
     try {
-      const response = await fetch(`${API_BASE}/tools/flashcards`, {
-        method: 'POST',
-        headers: getAuthHeaders(true),
-        body: JSON.stringify({
-          title: trimmedTitle,
-          text: trimmedText,
-          count: Number(count),
-        }),
+      const data = await createFlashcardDeck({
+        title: trimmedTitle,
+        text: trimmedText,
+        count: Number(count),
       });
-
-      if (response.status === 401) {
-        throw new Error('You are not authorized. Please sign in again.');
-      }
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Failed to generate flashcards.');
-      }
-
-      const data = await response.json();
 
       setDeck(data);
       setDecks((prev) => [data, ...prev]);
@@ -122,7 +82,7 @@ const Flashcards = (props) => {
       setStudyText('');
       setCount(5);
     } catch (err) {
-      setError(err.message || 'Something went wrong.');
+      setError(err.message || 'Failed to generate flashcards.');
     } finally {
       setLoading(false);
     }
@@ -131,20 +91,7 @@ const Flashcards = (props) => {
   const handleDeleteDeck = async (deckId) => {
     try {
       setError('');
-
-      const response = await fetch(`${API_BASE}/tools/flashcards/${deckId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.status === 401) {
-        throw new Error('You are not authorized. Please sign in again.');
-      }
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Failed to delete deck.');
-      }
+      await deleteFlashcardDeck(deckId);
 
       const updatedDecks = decks.filter((item) => item.id !== deckId);
       setDecks(updatedDecks);
@@ -166,22 +113,7 @@ const Flashcards = (props) => {
   const handleDeleteCard = async (deckId, cardId) => {
     try {
       setError('');
-
-      const response = await fetch(`${API_BASE}/tools/flashcards/${deckId}/cards/${cardId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.status === 401) {
-        throw new Error('You are not authorized. Please sign in again.');
-      }
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Failed to delete card.');
-      }
-
-      const updatedDeck = await response.json();
+      const updatedDeck = await deleteFlashcardCard(deckId, cardId);
 
       setDecks((prev) =>
         prev.map((item) => (item.id === deckId ? updatedDeck : item))
@@ -315,9 +247,7 @@ const Flashcards = (props) => {
                 <h3>{deck.deck_title}</h3>
                 <div className="deck-meta-row">
                   <span className="deck-language-badge">{deck.language}</span>
-                  <span className="deck-count-badge">
-                    {deck.cards.length} cards
-                  </span>
+                  <span className="deck-count-badge">{deck.cards.length} cards</span>
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
+import traceback
 
 from app.db.database import get_db
 from app.schemas.document import DocumentListItem, DocumentUploadResponse
@@ -26,6 +27,10 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
             raise HTTPException(status_code=415, detail=message)
 
         raise HTTPException(status_code=400, detail=message)
+    except Exception as e:
+        await file.close()
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @router.get("/documents", response_model=list[DocumentListItem])
